@@ -52,6 +52,7 @@ static void OnDllDetach() {
 	for (auto& cheat : cheats) cheat.disable(NULL);
 
 #if VERBOSE 
+	system("pause"); // wait for user input
 	unloadConsole();
 #endif
 }

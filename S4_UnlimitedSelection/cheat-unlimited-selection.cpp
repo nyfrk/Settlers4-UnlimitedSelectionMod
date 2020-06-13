@@ -47,7 +47,10 @@ static const HANDLE hProcess = GetCurrentProcess();
 //// Patterns
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-static const DWORD bufferOverflowFixPattern = (DWORD)FindPattern(hProcess, S4_Main, 
+static const DWORD bufferOverflowFixPattern2 = (DWORD)FindPattern(hProcess, S4_Main,
+	StringPattern("7C 38 8B 45 EC 8B 04 82 03 C6 78 2E 8B 0D ? ? ? ? 8B 7D F0 8D 04 49 C1 E0 02"));
+
+static const DWORD bufferOverflowFixPattern = (DWORD)FindPattern(hProcess, bufferOverflowFixPattern2 ? bufferOverflowFixPattern2 : S4_Main /* save some search time as this is expected to be just a few lines below */,
 	StringPattern("8B 7D 10 8B 04 82 03 45 FC 78 46 8B 0D ? ? ? ? 8B 55 F8 8D 04 89 C1 E0 02"));
 
 static const DWORD unlimitedBoxSelectPattern = (DWORD)FindPattern(hProcess, S4_Main,
@@ -66,12 +69,11 @@ static const DWORD clearSelectionPattern = (DWORD)FindPattern(hProcess, S4_Main,
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Return the address derived from the pattern if pattern is not null. 
- * Otherwise return the default address. We always prefer addresses
- * obtained by patterns over our hardcoded default.
+ * Conditional add. Return the address derived from the pattern if pattern is 
+ * not null. Otherwise return 0. 
  **/
-static DWORD PICK(DWORD def, DWORD pattern, int offset = 0) {
-	return pattern ? pattern + offset : def;
+static DWORD CADD(DWORD pattern, int offset = 0) {
+	return pattern ? pattern + offset : 0;
 }
 
 /**
@@ -92,47 +94,50 @@ static DWORD READ_AT(DWORD pattern, int offset = 0) {
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 // This patch will completely remove the limit from the box select tool
-static const DWORD unlimitedBoxSelectAddr = PICK(S4_Main + 0xED241, unlimitedBoxSelectPattern, 5);
+static const DWORD unlimitedBoxSelectAddr = CADD(unlimitedBoxSelectPattern, 5);
 static NopPatch unlimitedBoxSelectPatch(unlimitedBoxSelectAddr, 6);
 
 // This patch will set a new limit to LIMITED_BOXSELECT_LIMIT
-static const DWORD largerBoxSelectLimitAddr = PICK(S4_Main + 0xED23E, unlimitedBoxSelectPattern, 2);
+static const DWORD largerBoxSelectLimitAddr = CADD(unlimitedBoxSelectPattern, 2);
+static const void* const largerBoxSelectLimitContinue = (const void*)(largerBoxSelectLimitAddr + 0x09);
+static const void* const largerBoxSelectLimitBreak    = (const void*)(largerBoxSelectLimitAddr + 0x8D);
 static void __newBoxSelectLimit(); // hook procedure
 static JmpPatch largerBoxSelectLimit(largerBoxSelectLimitAddr, (DWORD)__newBoxSelectLimit, 4);
 
 // This patch fixes a buffer overflow related to the health bubbles caused by the increased limit
-static void __bufferOverflowFix(); // hook procedure
-static DWORD __bufferOverflowFixOffset = PICK(S4_Main + 0x105752C, READ_AT(bufferOverflowFixPattern, 13)); // this is used by the hook procedure.
-static const DWORD bufferOverflowFixAddr = PICK(S4_Main + 0x26041B, bufferOverflowFixPattern, 11);
-static const void* const largerBoxSelectLimitContinue = (const void *)(largerBoxSelectLimitAddr + 0x09);
-static const void* const largerBoxSelectLimitBreak = (const void*)(largerBoxSelectLimitAddr + 0x8D);
-static CallPatch bufferOverflowFixPatch(bufferOverflowFixAddr, (DWORD)__bufferOverflowFix, 1);
+static void __bufferOverflowFix (); // hook procedure (health bubbles)
+static void __bufferOverflowFix2(); // hook procedure (selection markers)
+static DWORD __bufferOverflowFixOffset  = READ_AT(bufferOverflowFixPattern , 13); // this is used by the hook procedure.
+static DWORD __bufferOverflowFixOffset2 = READ_AT(bufferOverflowFixPattern2, 14); // this is used by the hook procedure.
+static const DWORD bufferOverflowFixAddr  = CADD(bufferOverflowFixPattern , 11);
+static const DWORD bufferOverflowFixAddr2 = CADD(bufferOverflowFixPattern2, 12);
+static CallPatch bufferOverflowFixPatch (bufferOverflowFixAddr , (DWORD)__bufferOverflowFix , 1);
+static CallPatch bufferOverflowFixPatch2(bufferOverflowFixAddr2, (DWORD)__bufferOverflowFix2, 1);
 
 // This patch removes the limit of soldiers that can be commanded using right click
-static const DWORD unlimitedUnitsPerRightclickAddr = PICK(S4_Main + 0xEC8CF + 1, unlimitedUnitsPerRightclickPattern, 10);
+static const DWORD unlimitedUnitsPerRightclickAddr = CADD(unlimitedUnitsPerRightclickPattern, 10);
 static Patch unlimitedUnitsPerRightclickPatch(unlimitedUnitsPerRightclickAddr, (DWORD)0x7FFFFFFFu, (DWORD)0x64u);
 
 // This function allows to unselect all units
 typedef void (__stdcall *clearSelection_t)();
-static const clearSelection_t clearSelection = (clearSelection_t)PICK(S4_Main + 0xEE530, clearSelectionPattern);
+static const clearSelection_t clearSelection = (clearSelection_t)clearSelectionPattern;
 
-// The vector where all the selections are stored.
+// The vector where all the (accepted) selections are stored.
 // static const DWORD selectionVectorAddr = S4_Main + 0x10836f4; 
 
 
 // The patch bundle that contains all the patches to enable for this cheat.
 // Furthermore we assign names to each patch.
 static struct {
-	AbstractPatch* ptr;
-	const char* name;
-}const patchBundle[] = {
-	{&bufferOverflowFixPatch,"BufferOverflowFixPatch"},
-#if UNLIMITED_BOX_SELECT_LIMIT
-	{&unlimitedBoxSelectPatch,"UnlimitedBoxSelectPatch"},
-#else
-	{&largerBoxSelectLimit,"LargerBoxSelectPatch"},
-#endif
-	{&unlimitedUnitsPerRightclickPatch,"UnlimitedUnitsPerRightclickPatch"},
+	AbstractPatch* const ptr;
+	const char* const name;
+	const bool skip; 
+} const patchBundle[] = {
+	{&bufferOverflowFixPatch,"BufferOverflowFixPatch",!bufferOverflowFixAddr},
+	{&bufferOverflowFixPatch2,"BufferOverflowFixPatch2",!bufferOverflowFixAddr2},
+	{&unlimitedBoxSelectPatch,"UnlimitedBoxSelectPatch",!unlimitedBoxSelectAddr || !UNLIMITED_BOX_SELECT_LIMIT},
+	{&largerBoxSelectLimit,"LargerBoxSelectPatch", !largerBoxSelectLimitAddr || UNLIMITED_BOX_SELECT_LIMIT},
+	{&unlimitedUnitsPerRightclickPatch,"UnlimitedUnitsPerRightclickPatch",!unlimitedUnitsPerRightclickAddr},
 };
 
 
@@ -151,11 +156,12 @@ DllExport int __stdcall EnableUnlimitedSelectionCheat(const void* reserved) {
 
 	#if VERBOSE
 	cout << "EnableUnlimitedSelectionCheat() has been called" << endl
-		 << endl << "  Pattern matching results:" << endl
-		 << "  [ 0x" << hex << bufferOverflowFixPattern << " ] bufferOverflowFixPattern" << endl
-		 << "  [ 0x" << hex << unlimitedBoxSelectPattern << " ] unlimitedBoxSelectPattern" << endl
-		 << "  [ 0x" << hex << unlimitedUnitsPerRightclickPattern << " ] unlimitedUnitsPerRightclickPattern" << endl
-		 << "  [ 0x" << hex << clearSelectionPattern << " ] unselectAllPatternFindPattern" << endl 
+		 << endl << "Pattern matching results:" << endl
+		 << "  [ S4_Main.exe + 0x" << hex << (bufferOverflowFixPattern - S4_Main) << " ] bufferOverflowFixPattern" << endl
+		 << "  [ S4_Main.exe + 0x" << hex << (bufferOverflowFixPattern2 - S4_Main) << " ] bufferOverflowFixPattern2" << endl
+		 << "  [ S4_Main.exe + 0x" << hex << (unlimitedBoxSelectPattern - S4_Main) << " ] unlimitedBoxSelectPattern" << endl
+		 << "  [ S4_Main.exe + 0x" << hex << (unlimitedUnitsPerRightclickPattern - S4_Main) << " ] unlimitedUnitsPerRightclickPattern" << endl
+		 << "  [ S4_Main.exe + 0x" << hex << (clearSelectionPattern - S4_Main) << " ] unselectAllPatternFindPattern" << endl
 		 << endl;
 	#endif
 
@@ -169,11 +175,28 @@ DllExport int __stdcall EnableUnlimitedSelectionCheat(const void* reserved) {
 	isCheatEnabled = true;
 
 
+	#if VERBOSE
+		cout << "Will now apply patches:" << endl;
+	#endif
+
 	for (auto& patch : patchBundle) {
+
 		#if VERBOSE
-			cout << "  [ 0x" << hex << patch.ptr->getAddress() << " ] Apply " << patch.name << endl;
+			cout << "  [ S4_Main.exe + 0x" << hex << (patch.ptr->getAddress() - S4_Main) << " ] Apply " << patch.name << " ... ";
 		#endif
-		patch.ptr->patch(hProcess);
+
+		if (patch.skip) {
+			#if VERBOSE
+				cout << "skipped" << endl;
+			#endif
+		} else {
+			auto ret = patch.ptr->patch(hProcess);
+			#if VERBOSE
+				cout << (ret ? "ok" : "failed") << endl;
+			#else
+				UNREFERENCED_PARAMETER(ret);
+			#endif
+		}
 	}
 
 
@@ -191,7 +214,7 @@ DllExport int __stdcall DisableUnlimitedSelectionCheat(const void *reserved) {
 	UNREFERENCED_PARAMETER(reserved);
 
 	#if VERBOSE
-		cout << "DisableUnlimitedSelectionCheat() has been called" << endl;
+		cout << "DisableUnlimitedSelectionCheat() has been called" << endl << endl;
 	#endif
 
 
@@ -204,25 +227,52 @@ DllExport int __stdcall DisableUnlimitedSelectionCheat(const void *reserved) {
 	isCheatEnabled = false;
 
 
-	#if VERBOSE
-		cout << "  [ 0x" << hex << (DWORD)clearSelection << " ] Clearing selection" << endl << endl;
-	#endif
 	// Note when unloading, we must make sure to clear the selection because 
 	// otherwise we may crash the game when more than 100 units are selected.
-	clearSelection();
-
-
-	// Undo patches in reversed order
-	for (int i = _countof(patchBundle) - 1; i >= 0; i--) {
+	#if VERBOSE
+		cout << "  [ S4_Main.exe + 0x" << hex << ((DWORD)clearSelection - S4_Main) << " ] Clearing selection ... ";
+	#endif
+	if (clearSelectionPattern) { 
+		clearSelection(); 
 		#if VERBOSE
-			cout << "  [ 0x" << hex << patchBundle[i].ptr->getAddress() << " ] Restore " << patchBundle[i].name << endl;
+			cout << "ok" << endl << endl;
 		#endif
-		patchBundle[i].ptr->unpatch(hProcess);
+	} else {
+		#if VERBOSE
+			cout << "skipped" << endl << endl;
+		#endif
 	}
 
 
 	#if VERBOSE
-		cout << "DisableUnlimitedSelectionCheat() has completed" << endl;
+		cout << "Will now restore patches:" << endl;
+	#endif
+
+	// Undo patches in reversed order
+	for (int i = _countof(patchBundle) - 1; i >= 0; i--) {
+		auto& patch = patchBundle[i];
+
+		#if VERBOSE
+			cout << "  [ S4_Main.exe + 0x" << hex << (patch.ptr->getAddress() - S4_Main) << " ] Restore " << patch.name << " ... ";
+		#endif
+
+		if (patch.skip) {
+			#if VERBOSE
+				cout << "skipped" << endl;
+			#endif
+		} else {
+			auto ret = patch.ptr->unpatch(hProcess);
+			#if VERBOSE
+				cout << (ret ? "ok" : "failed") << endl;
+			#else
+				UNREFERENCED_PARAMETER(ret);
+			#endif
+		}
+	}
+
+
+	#if VERBOSE
+		cout << endl << "DisableUnlimitedSelectionCheat() has completed" << endl;
 	#endif
 
 	return 0;
@@ -241,6 +291,18 @@ static void __declspec(naked) __bufferOverflowFix() {
 		cmp ecx, 100
 		jl ok
 			mov ecx, 100
+		ok:
+		ret
+	}
+}
+
+static void __declspec(naked) __bufferOverflowFix2() {
+	__asm {
+		mov ecx, [__bufferOverflowFixOffset2]
+		mov ecx, [ecx]
+		cmp ecx, 100
+		jl ok
+		mov ecx, 100
 		ok:
 		ret
 	}
@@ -272,6 +334,17 @@ S4_Main.exe+26041B - 8B 0D 2C75A701        - mov ecx,[S4_Main.exe+105752C]    <=
 S4_Main.exe+260421 - 8B 55 F8              - mov edx,[ebp-08]
 S4_Main.exe+260424 - 8D 04 89              - lea eax,[ecx+ecx*4]
 S4_Main.exe+260427 - C1 E0 02              - shl eax,02
+
+bufferOverflowFixPattern2 (+12):
+S4_Main.exe+260334 - 7C 38                 - jl S4_Main.exe+26036E
+S4_Main.exe+260336 - 8B 45 EC              - mov eax,[ebp-14]
+S4_Main.exe+260339 - 8B 04 82              - mov eax,[edx+eax*4]
+S4_Main.exe+26033C - 03 C6                 - add eax,esi
+S4_Main.exe+26033E - 78 2E                 - js S4_Main.exe+26036E
+S4_Main.exe+260340 - 8B 0D 1475A701        - mov ecx,[S4_Main.exe+1057514]    <===== we patch here
+S4_Main.exe+260346 - 8B 7D F0              - mov edi,[ebp-10]
+S4_Main.exe+260349 - 8D 04 49              - lea eax,[ecx+ecx*2]
+S4_Main.exe+26034C - C1 E0 02              - shl eax,02
 
 unlimitedBoxSelectPatch (+5):
 S4_Main.exe+ED23C - D1 F8                 - sar eax,1
