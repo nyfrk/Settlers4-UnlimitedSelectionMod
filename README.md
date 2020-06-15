@@ -2,7 +2,7 @@
 
 By default, you can only select at most 100 units. This mod aims to remove that limit so that you can manage huge armies with ease.
 
-![186-units-selected](186-units-selected.png)
+![186-units-selected](units-selected.png)
 
 There is a [German translation for this README](README_DE.md). Please note that it may be outdated.
 

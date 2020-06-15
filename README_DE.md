@@ -2,7 +2,7 @@
 
 Standardmäßig können maximal nur 100 Einheiten selektiert werden. Diese Modifikation versucht, die Beschränkung aufzuheben, sodass große Armeen mit Leichtigkeit verwaltet werden können.
 
-![186-units-selected](186-units-selected.png)
+![186-units-selected](units-selected.png)
 
 Für dieses README gibt es eine [englische Version](README.md). Bitte beachte, dass die deutsche Übersetzung ggf. veraltet sein kann.
 
