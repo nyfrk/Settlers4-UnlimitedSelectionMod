@@ -38,16 +38,14 @@ The mod will not modify any files permanently. Just remove both downloaded files
 
 #### Method 2: Using ASI Loader
 
-The advantage of using an ASI loader is that you can install multiple mods just by pasting them into a predestined directory. I recommend [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader) as it works nicely with the History Edition of The Settlers 4 and does not require any configuration. It does not seem to work with the Gold Edition though. Let me know if you find an ASI Loader that works with the Gold Edition. If you already have an ASI loader installed skip the first steps and jump directly to step 4. 
+The advantage of using an ASI loader is that you can install multiple mods just by pasting them into a predestined directory. I recommend [The Settlers 4: ASI Loader](https://github.com/nyfrk/Settlers4-ASI-Loader) as it works nicely with the Gold and History Edition of The Settlers 4 and does not require any configuration. If you already have an ASI loader installed skip the first steps and jump directly to step 5. 
 
-1. [Download a release of the Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases). Make sure to choose the x86 Version (*not* x64).
-2. Unpack it to the very same directory of your S4_Main.exe. This resides in you installation directory of The Settlers 4. For the gold edition it is in a subfolder named exe/
-3. In the same directory: 
-3.1. Rename the `binkw32.dll` to `binkw32Hooked.dll`
-3.2. Rename the `dinput8.dll` that you just unpacked to `binkw32.dll`
-3.3. Create a directory in the very same folder and name it `plugins`
-4. [Download a release of the Unlimited Selection Mod](https://github.com/nyfrk/S4_UnlimitedSelection/releases). Unpack the `S4_UnlimitedSelection.asi`  to the `plugins` directory. Note that `Injector.exe` is not required. 
-5. Start the game. The mod will load automatically.
+1. Navigate to your installation directory of your game.
+2. Find a file named `binkw32.dll` and rename it to `binkw32Hooked.dll`. (For the Gold Edition it is in a subdirectory named `Exe`)
+3. [Download a release of the Settlers 4 ASI Loader](https://github.com/nyfrk/Settlers4-ASI-Loader/releases) and unpack the `binkw32.dll` to the very same directory.
+4. Create a `plugins` directory next to your `S4_Main.exe`
+5. [Download a release of the Unlimited Selection Mod](https://github.com/nyfrk/S4_UnlimitedSelection/releases). Unpack the `S4_UnlimitedSelection.asi`  to the `plugins` directory. Note that `Injector.exe` is not required. 
+6. Start the game. The mod will load automatically.
 
 To uninstall the mod remove `S4_UnlimitedSelection.asi` from the `plugins` directory. If you do not want to use the ASI loader anymore just reverse the described steps. 
 

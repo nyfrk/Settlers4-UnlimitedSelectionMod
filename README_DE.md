@@ -36,16 +36,14 @@ Der Injektor beginnt mit der Injektion der DLL, sobald das Spiel gestartet wird.
 
 #### Methode 2: ASI Loader
 
-Der Vorteil der Verwendung eines ASI-Loaders besteht darin, dass Du mehrere Mods installieren kannst, indem Du sie einfach in ein festgelegtes Verzeichnis einfügst. Ich empfehle den [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader), da er gut mit der History Edition von Die Siedler 4 funktioniert und keine Konfiguration erfordert. Er funktioniert jedoch nicht mit der Gold Edition. Lass es mich wissen, falls Du einen funktionierenden ASI Loader für die Gold Edition kennst. Wenn Du bereits einen ASI-Loader installiert hast, überspringe die ersten Schritte und fahre direkt mit Schritt 4 fort.
+Der Vorteil der Verwendung eines ASI-Loaders besteht darin, dass Du mehrere Mods installieren kannst, indem Du sie einfach in ein festgelegtes Verzeichnis einfügst. Ich empfehle den [The Settlers 4: ASI Loader](https://github.com/nyfrk/Settlers4-ASI-Loader), da er gut mit der Gold und History Edition von Die Siedler 4 funktioniert und keinerlei Konfiguration erfordert. Wenn Du bereits einen ASI-Loader installiert hast, überspringe die ersten Schritte und fahre direkt mit Schritt 5 fort.
 
-1. Lade eine Version des [Ultimate ASI Loader herunter](https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases). Stelle sicher, dass Du die x86-Version auswählst (*nicht* x64).
-2. Entpacke die Datei in dasselbe Verzeichnis wie deine S4_Main.exe. Es befindet sich im Installationsverzeichnis von Die Siedler 4. Für die Gold-Edition befindet es sich in einem Unterordner namens exe/
-3. Im gleichen Verzeichnis: 
-3.1. Benenne die `binkw32.dll` in `binkw32Hooked.dll` um
-3.2. Benenne die `dinput8.dll`, die Du gerade entpackt hast, in `binkw32.dll` um.
-3.3. Erstelle ein Verzeichnis im selben Ordner und nenne es `plugins`.
-4. Lade eine Version des [Unlimited Selection Mod](https://github.com/nyfrk/S4_UnlimitedSelection/releases) herunter. Entpacke die Datei `S4_UnlimitedSelection.asi` in das Verzeichnis `plugins`. Beachten, dass die `Injector.exe` nicht erforderlich ist. 
-5. Starte das Spiel. Die Mod wird sollte nun automatisch geladen werden.
+1. Navigiere zum Installationsverzeichnis des Spiels.
+2. Suche eine Datei namens `binkw32.dll` und benennen sie in `binkw32Hooked.dll` um. (Bei der Gold Edition befindet sie sich in einem Unterverzeichnis namens `Exe`)
+3. Lade ein [Release des ASI Loaders](https://github.com/nyfrk/Settlers4-ASI-Loader/releases) herunter und entpacke die `binkw32.dll` in dasselbe Verzeichnis.
+4. Erstellen ein Verzeichnis namens `plugins` neben der `S4_Main.exe`.
+5. Lade eine Version des [Unlimited Selection Mod](https://github.com/nyfrk/S4_UnlimitedSelection/releases) herunter. Entpacke die Datei `S4_UnlimitedSelection.asi` in das Verzeichnis `plugins`. Beachte, dass die `Injector.exe` nicht erforderlich ist. 
+6. Starte das Spiel. Die Mod sollte nun automatisch geladen werden.
 
 Um die Mod zu deinstallieren, entferne die `S4_UnlimitedSelection.asi` aus dem `plugins`-Verzeichnis. Wenn Du den ASI-Loader nicht mehr verwenden möchtest, kannst Du einfach alle Schritte wieder rückgängig machen. 
 
